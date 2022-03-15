@@ -23,7 +23,7 @@ const getStat = async () => {
         Referer: "https://www.tinkoff.ru/",
         "Referrer-Policy": "strict-origin-when-cross-origin",
       },
-      body: '{"bounds":{"bottomLeft":{"lat":47.22404935174316,"lng":39.66899818078528},"topRight":{"lat":47.28470798409589,"lng":39.76847594872961}},"filters":{"showUnavailable":true,"currencies":["USD"]},"zoom":14}',
+      body: '{"bounds":{"bottomLeft":{"lat":47.208608055967176,"lng":39.62608000538524},"topRight":{"lat":47.329890980715085,"lng":39.77233549854932}},"filters":{"showUnavailable":true,"currencies":["USD"]},"zoom":13}',
       method: "POST",
     });
 
@@ -35,8 +35,6 @@ const getStat = async () => {
   }
 };
 
-var alreadyExists = [];
-
 const notify = (remain) => {
   notifier.notify(
     {
@@ -44,13 +42,12 @@ const notify = (remain) => {
       message: new Date().toLocaleString(),
       sound: true, // Only Notification Center or Windows Toasters
       wait: true // Wait with callback, until user action is taken against notification, does not apply to Windows Toasters as they always wait or notify-send as it does not support the wait option
-    },
-    function (err, response, metadata) {
-      // Response is response from notification
-      // Metadata contains activationType, activationAt, deliveredAt
     }
   );
 }
+
+let alreadyExists = [];
+let resetTimer;
 
 setInterval(async () => {
   const clusters = await getStat();
@@ -58,15 +55,18 @@ setInterval(async () => {
     clusters.forEach(cluster => {
       const remain = cluster.points[0].atmInfo.limits[0].amount;
 
-      if (cluster && !alreadyExists.includes(remain)) {
+      if (remain >= 20 && !alreadyExists.includes(remain)) {
         console.log(
           `${new Date().toLocaleString()} баксы появились – $${remain}!`
         );
         alreadyExists.push(remain);
-        if (remain >= 2000) {
-          notify(remain);
-          beep();
-        }
+        notify(remain);
+        beep();
+        // reset cache in some time
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => {
+          alreadyExists = [];
+        }, 3 * 60 * 1000);
       }
     })
   }
