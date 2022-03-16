@@ -46,6 +46,8 @@ const notify = (remain, address) => {
   );
 }
 
+const excludeIds = ['008002'];
+
 let alreadyExists = {};
 
 const resetTimer = (id) => {
@@ -58,11 +60,11 @@ setInterval(async () => {
   const clusters = await getStat();
   if (clusters?.length) {
     clusters.forEach(cluster => {
-      const id = cluster.id;
+      const id = cluster.points[0].id;
       const address = cluster.points[0].address;
       const remain = cluster.points[0].atmInfo.limits[0].amount;
 
-      if (remain >= 2000 && !alreadyExists[id]) {
+      if (remain >= 2000 && !alreadyExists[id] && !excludeIds.includes(id)) {
         console.log(
           `${new Date().toLocaleString()} - $${remain} - ${address}`
         );
