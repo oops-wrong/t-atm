@@ -1,5 +1,6 @@
 {
-  "name": "Tinkoff ATMs",
+  "name": "t-atm",
+  "version": "0.0.0",
   "scripts": {
     "start": "node index.js"
   },
