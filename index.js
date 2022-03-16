@@ -23,7 +23,7 @@ const getStat = async () => {
         Referer: "https://www.tinkoff.ru/",
         "Referrer-Policy": "strict-origin-when-cross-origin",
       },
-      body: '{"bounds":{"bottomLeft":{"lat":47.208608055967176,"lng":39.62608000538524},"topRight":{"lat":47.329890980715085,"lng":39.77233549854932}},"filters":{"showUnavailable":true,"currencies":["USD"]},"zoom":13}',
+      body: '{"bounds":{"bottomLeft":{"lat":47.208608055967176,"lng":39.62608000538524},"topRight":{"lat":47.329890980715085,"lng":39.77233549854932}},"filters":{"showUnavailable":true,"currencies":["USD"]},"zoom":12}',
       method: "POST",
     });
 
@@ -35,44 +35,47 @@ const getStat = async () => {
   }
 };
 
-const notify = (remain) => {
+const notify = (remain, address) => {
   notifier.notify(
     {
       title: `Баксы появились – $${remain}!`,
-      message: new Date().toLocaleString(),
+      message: address,
       sound: true, // Only Notification Center or Windows Toasters
       wait: true // Wait with callback, until user action is taken against notification, does not apply to Windows Toasters as they always wait or notify-send as it does not support the wait option
     }
   );
 }
 
-let alreadyExists = [];
-let resetTimer;
+let alreadyExists = {};
+
+const resetTimer = (id) => {
+  setTimeout(() => {
+    delete alreadyExists[id];
+  }, 5 * 60 * 1000);
+};
 
 setInterval(async () => {
   const clusters = await getStat();
   if (clusters?.length) {
     clusters.forEach(cluster => {
+      const id = cluster.id;
+      const address = cluster.points[0].address;
       const remain = cluster.points[0].atmInfo.limits[0].amount;
 
-      if (remain >= 20 && !alreadyExists.includes(remain)) {
+      if (remain >= 2000 && !alreadyExists[id]) {
         console.log(
-          `${new Date().toLocaleString()} баксы появились – $${remain}!`
+          `${new Date().toLocaleString()} - $${remain} - ${address}`
         );
-        alreadyExists.push(remain);
-        notify(remain);
+        alreadyExists[id] = remain;
+        notify(remain, address);
         beep();
-        // reset cache in some time
-        clearTimeout(resetTimer);
-        resetTimer = setTimeout(() => {
-          alreadyExists = [];
-        }, 3 * 60 * 1000);
+        resetTimer(id);
       }
     })
   }
 
   if (!clusters?.length && alreadyExists.length) {
     console.log(`${new Date().toLocaleString()} баксы закончились!`);
-    alreadyExists = [];
+    alreadyExists = {};
   }
 }, 10000);
