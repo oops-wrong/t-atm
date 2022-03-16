@@ -74,7 +74,7 @@ setInterval(async () => {
     })
   }
 
-  if (!clusters?.length && alreadyExists.length) {
+  if (!clusters?.length && Object.values(alreadyExists).length) {
     console.log(`${new Date().toLocaleString()} баксы закончились!`);
     alreadyExists = {};
   }
